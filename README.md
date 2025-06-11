@@ -36,40 +36,43 @@
 
 ## การติดตั้ง
 
-1. ติดตั้ง .NET 6.0 SDK หรือใหม่กว่า
-2. Clone repository:
-```bash
-git clone https://github.com/poteto22/ATEM-Switcher-Control.git
-```
-3. รันโปรแกรม:
-```bash
-cd ATEM-Switcher-Control
-dotnet run
-```
+1. ดาวน์โหลดไฟล์ติดตั้งล่าสุดจาก [Releases](https://github.com/poteto22/ATEM-Switcher-Control/releases)
+2. เปิดไฟล์ `ATEM-Switcher-Control-Setup.exe`
+3. ทำตามขั้นตอนการติดตั้ง
 
 ## การใช้งาน
 
-1. กรอก IP Address ของ ATEM Switcher
-   - ค่าเริ่มต้น: 192.168.1.1
-   - ค่าจะถูกบันทึกอัตโนมัติ
-2. กดปุ่ม "เชื่อมต่อ"
-   - รอจนกว่าจะเชื่อมต่อสำเร็จ
-   - รายการ Input จะถูกโหลดมาแสดง
-3. เลือก Input จาก ComboBox
-   - แสดงหมายเลขและชื่อ Input
-   - เลือก Input ที่ต้องการ
-4. กดปุ่ม "เลือก Input" เพื่อเปลี่ยน Preview
-   - Input ที่เลือกจะไปแสดงที่ Preview
-   - Program จะยังคงเหมือนเดิม
-5. ใช้ปุ่ม Cut หรือ Auto เพื่อทำ Transition
-   - Cut: เปลี่ยนภาพทันที
-   - Auto: เปลี่ยนภาพแบบอัตโนมัติ
+1. เปิดโปรแกรม ATEM Switcher Control
+2. ใส่ IP Address ของ ATEM Switcher
+3. กดปุ่ม Connect
+4. เลือก Input ที่ต้องการจาก ComboBox
+5. กดปุ่ม Take เพื่อสลับภาพ
 
 ## การพัฒนา
 
-- Visual Studio 2022 หรือใหม่กว่า
+### ความต้องการของระบบ
 - .NET 6.0 SDK
-- BMDSwitcherAPI package
+- Visual Studio 2022 หรือ Rider
+- Blackmagic Desktop Video SDK
+
+### การ Build
+1. Clone repository
+```bash
+git clone https://github.com/poteto22/ATEM-Switcher-Control.git
+```
+
+2. Build โปรเจค
+```bash
+dotnet publish -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true
+```
+
+3. สร้าง installer
+- เปิดไฟล์ `installer.iss` ใน Inno Setup
+- กดปุ่ม Build > Compile
+
+## หมายเหตุ
+- ไฟล์ `BMDSwitcherAPI64.dll` จะถูกติดตั้งโดยอัตโนมัติพร้อมกับโปรแกรม
+- หากมีปัญหาในการเชื่อมต่อ ให้ตรวจสอบว่า ATEM Switcher เปิดอยู่และสามารถเข้าถึงได้จากเครือข่าย
 
 ## License
 
