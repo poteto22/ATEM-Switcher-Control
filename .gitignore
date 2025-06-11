@@ -80,4 +80,8 @@ artifacts/
 *.nuget.targets
 
 # Local configuration file
-atem_config.json 
+atem_config.json
+
+# Ignore lib folder except BMDSwitcherAPI64.dll
+lib/*
+!lib/BMDSwitcherAPI64.dll 
