@@ -27,9 +27,6 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Source: "bin\Release\net6.0-windows\win-x64\publish\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "bin\Release\net6.0-windows\win-x64\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
 
-; BMDSwitcherAPI file
-Source: "lib\BMDSwitcherAPI64.dll"; DestDir: "{app}"; Flags: ignoreversion
-
 [Icons]
 Name: "{group}\ATEM Switcher Control"; Filename: "{app}\WinformApp.exe"
 Name: "{commondesktop}\ATEM Switcher Control"; Filename: "{app}\WinformApp.exe"

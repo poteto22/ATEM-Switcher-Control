@@ -11,14 +11,14 @@
 
   <ItemGroup>
     <Reference Include="BMDSwitcherAPI">
-      <HintPath>lib\BMDSwitcherAPI64.dll</HintPath>
-      <Private>True</Private>
+      <HintPath>C:\Program Files (x86)\Blackmagic Design\Blackmagic ATEM Switchers\BMDSwitcherAPI64.dll</HintPath>
+      <Private>False</Private>
     </Reference>
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="lib\BMDSwitcherAPI.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <None Update="C:\Program Files (x86)\Blackmagic Design\Blackmagic ATEM Switchers\BMDSwitcherAPI64.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 </Project> 
