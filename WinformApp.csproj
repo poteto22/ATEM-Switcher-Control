@@ -1,15 +1,18 @@
-<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net6.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
-    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
-  
+
   <ItemGroup>
     <Reference Include="BMDSwitcherAPI">
-      <HintPath>lib\BMDSwitcherAPI.dll</HintPath>
+      <HintPath>lib\BMDSwitcherAPI64.dll</HintPath>
+      <Private>True</Private>
     </Reference>
   </ItemGroup>
 
