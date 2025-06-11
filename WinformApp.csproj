@@ -4,9 +4,18 @@
     <TargetFramework>net6.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="BMDSwitcherAPI" Version="8.5.3" />
+    <Reference Include="BMDSwitcherAPI">
+      <HintPath>lib\BMDSwitcherAPI.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="lib\BMDSwitcherAPI.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 </Project> 
