@@ -8,6 +8,10 @@
 *.userosscache
 *.sln.docstates
 
+# macOS system files
+.DS_Store
+**/.DS_Store
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
@@ -84,4 +88,7 @@ atem_config.json
 
 # Ignore lib folder except BMDSwitcherAPI64.dll
 lib/*
-!lib/BMDSwitcherAPI64.dll 
+!lib/BMDSwitcherAPI64.dll
+
+# Ignore include folder
+include/ 
