@@ -5,139 +5,53 @@ using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace WinformApp
 {
     public partial class Form1 : Form
     {
-        private IBMDSwitcher switcher;
-        private IBMDSwitcherMixEffectBlock meBlock;
-        private TextBox ipAddressTextBox;
-        private Button connectButton;
-        private Button disconnectButton;
-        private Button cutButton;
-        private Button autoButton;
-        private Label statusLabel;
-        private ComboBox inputComboBox;
-        private Button setInputButton;
+        private IBMDSwitcher? switcher;
+        private IBMDSwitcherMixEffectBlock? meBlock;
         private Dictionary<long, string> inputMap;
-        private Label programLabel;
-        private Label previewLabel;
-        private IBMDSwitcherMixEffectBlockCallback meCallback;
+        private IBMDSwitcherMixEffectBlockCallback? meCallback;
         private const string CONFIG_FILE = "atem_config.json";
+
+        private class MixEffectBlockCallback : IBMDSwitcherMixEffectBlockCallback
+        {
+            private Form1 form;
+
+            public MixEffectBlockCallback(Form1 form)
+            {
+                this.form = form;
+            }
+
+            public void Notify(_BMDSwitcherMixEffectBlockEventType eventType)
+            {
+                if (form.InvokeRequired)
+                {
+                    form.Invoke(new Action(() => Notify(eventType)));
+                    return;
+                }
+
+                switch (eventType)
+                {
+                    case _BMDSwitcherMixEffectBlockEventType.bmdSwitcherMixEffectBlockEventTypeProgramInputChanged:
+                        form.UpdateProgramInput();
+                        break;
+                    case _BMDSwitcherMixEffectBlockEventType.bmdSwitcherMixEffectBlockEventTypePreviewInputChanged:
+                        form.UpdatePreviewInput();
+                        break;
+                }
+            }
+        }
 
         public Form1()
         {
             InitializeComponent();
             this.Text = "ATEM Switcher Control";
             inputMap = new Dictionary<long, string>();
-            InitializeATEMControls();
             LoadConfig();
-        }
-
-        private void InitializeATEMControls()
-        {
-            // IP Address TextBox
-            ipAddressTextBox = new TextBox
-            {
-                Location = new System.Drawing.Point(20, 20),
-                Size = new System.Drawing.Size(150, 20),
-                Text = "192.168.1.1"
-            };
-            ipAddressTextBox.TextChanged += IpAddressTextBox_TextChanged;
-            this.Controls.Add(ipAddressTextBox);
-
-            // Connect Button
-            connectButton = new Button
-            {
-                Location = new System.Drawing.Point(180, 20),
-                Size = new System.Drawing.Size(100, 23),
-                Text = "เชื่อมต่อ"
-            };
-            connectButton.Click += ConnectButton_Click;
-            this.Controls.Add(connectButton);
-
-            // Disconnect Button
-            disconnectButton = new Button
-            {
-                Location = new System.Drawing.Point(290, 20),
-                Size = new System.Drawing.Size(100, 23),
-                Text = "ยกเลิกการเชื่อมต่อ",
-                Enabled = false
-            };
-            disconnectButton.Click += DisconnectButton_Click;
-            this.Controls.Add(disconnectButton);
-
-            // Program Label
-            programLabel = new Label
-            {
-                Location = new System.Drawing.Point(20, 60),
-                Size = new System.Drawing.Size(360, 20),
-                Text = "Program: ไม่มีข้อมูล",
-                Font = new System.Drawing.Font(programLabel.Font, System.Drawing.FontStyle.Bold)
-            };
-            this.Controls.Add(programLabel);
-
-            // Preview Label
-            previewLabel = new Label
-            {
-                Location = new System.Drawing.Point(20, 85),
-                Size = new System.Drawing.Size(360, 20),
-                Text = "Preview: ไม่มีข้อมูล"
-            };
-            this.Controls.Add(previewLabel);
-
-            // Input ComboBox
-            inputComboBox = new ComboBox
-            {
-                Location = new System.Drawing.Point(20, 115),
-                Size = new System.Drawing.Size(200, 23),
-                DropDownStyle = ComboBoxStyle.DropDownList,
-                Enabled = false
-            };
-            this.Controls.Add(inputComboBox);
-
-            // Set Input Button
-            setInputButton = new Button
-            {
-                Location = new System.Drawing.Point(230, 115),
-                Size = new System.Drawing.Size(100, 23),
-                Text = "เลือก Input",
-                Enabled = false
-            };
-            setInputButton.Click += SetInputButton_Click;
-            this.Controls.Add(setInputButton);
-
-            // Cut Button
-            cutButton = new Button
-            {
-                Location = new System.Drawing.Point(20, 150),
-                Size = new System.Drawing.Size(100, 23),
-                Text = "Cut",
-                Enabled = false
-            };
-            cutButton.Click += CutButton_Click;
-            this.Controls.Add(cutButton);
-
-            // Auto Button
-            autoButton = new Button
-            {
-                Location = new System.Drawing.Point(130, 150),
-                Size = new System.Drawing.Size(100, 23),
-                Text = "Auto",
-                Enabled = false
-            };
-            autoButton.Click += AutoButton_Click;
-            this.Controls.Add(autoButton);
-
-            // Status Label
-            statusLabel = new Label
-            {
-                Location = new System.Drawing.Point(20, 190),
-                Size = new System.Drawing.Size(360, 20),
-                Text = "สถานะ: ไม่ได้เชื่อมต่อ"
-            };
-            this.Controls.Add(statusLabel);
         }
 
         private void LoadConfig()
@@ -185,86 +99,96 @@ namespace WinformApp
             {
                 // สร้าง Switcher Discovery
                 var discovery = new CBMDSwitcherDiscovery();
-                var switcherConnect = await Task.Run(() => discovery.ConnectTo(ipAddressTextBox.Text));
+                IBMDSwitcher? switcherDevice = null;
+                _BMDSwitcherConnectToFailure failureReason = 0;
+
+                await Task.Run(() => {
+                    discovery.ConnectTo(ipAddressTextBox.Text, out switcherDevice, out failureReason);
+                });
                 
-                if (switcherConnect != null)
+                if (failureReason == 0 && switcherDevice != null)
                 {
-                    switcher = switcherConnect;
+                    switcher = switcherDevice;
                     meBlock = switcher as IBMDSwitcherMixEffectBlock;
                     
-                    // โหลด Input List
-                    LoadInputList();
-                    
-                    connectButton.Enabled = false;
-                    disconnectButton.Enabled = true;
-                    cutButton.Enabled = true;
-                    autoButton.Enabled = true;
-                    inputComboBox.Enabled = true;
-                    setInputButton.Enabled = true;
-                    statusLabel.Text = "สถานะ: เชื่อมต่อสำเร็จ";
+                    if (meBlock != null)
+                    {
+                        // สร้างและตั้งค่า callback
+                        meCallback = new MixEffectBlockCallback(this);
+                        meBlock.AddCallback(meCallback);
+                        
+                        // โหลด Input List
+                        LoadInputList();
+                        
+                        connectButton.Enabled = false;
+                        disconnectButton.Enabled = true;
+                        inputComboBox.Enabled = true;
+                        setInputButton.Enabled = true;
+                        cutButton.Enabled = true;
+                        autoButton.Enabled = true;
+                        
+                        statusLabel.Text = "สถานะ: เชื่อมต่อสำเร็จ";
+                    }
+                    else
+                    {
+                        MessageBox.Show("ไม่สามารถเข้าถึง Mix Effect Block ได้", "ข้อผิดพลาด", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+                else
+                {
+                    MessageBox.Show($"ไม่สามารถเชื่อมต่อได้: {failureReason}", "ข้อผิดพลาด", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"เกิดข้อผิดพลาดในการเชื่อมต่อ: {ex.Message}", "ข้อผิดพลาด", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"เกิดข้อผิดพลาด: {ex.Message}", "ข้อผิดพลาด", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
         private void LoadInputList()
         {
-            try
+            inputComboBox.Items.Clear();
+            inputMap.Clear();
+
+            if (switcher != null)
             {
-                inputComboBox.Items.Clear();
-                inputMap.Clear();
+                Guid inputIteratorGuid = typeof(IBMDSwitcherInputIterator).GUID;
+                IntPtr iteratorPtr;
+                switcher.CreateIterator(ref inputIteratorGuid, out iteratorPtr);
+                var iterator = (IBMDSwitcherInputIterator)Marshal.GetObjectForIUnknown(iteratorPtr);
 
-                // ดึง Input Iterator
-                IBMDSwitcherInputIterator inputIterator = switcher as IBMDSwitcherInputIterator;
-                if (inputIterator != null)
+                IBMDSwitcherInput? input;
+                while (true)
                 {
-                    IBMDSwitcherInput input;
-                    while (inputIterator.Next(out input) == 0)
-                    {
-                        long inputId;
-                        input.GetInputId(out inputId);
+                    iterator.Next(out input);
+                    if (input == null) break;
 
-                        string inputName;
-                        input.GetLongName(out inputName);
-
-                        inputMap[inputId] = inputName;
-                        inputComboBox.Items.Add($"{inputId}: {inputName}");
-
-                        Marshal.ReleaseComObject(input);
-                    }
+                    long inputId;
+                    input.GetInputId(out inputId);
+                    string name;
+                    input.GetLongName(out name);
+                    inputMap[inputId] = name;
+                    inputComboBox.Items.Add($"{inputId} - {name}");
                 }
 
-                if (inputComboBox.Items.Count > 0)
-                {
-                    inputComboBox.SelectedIndex = 0;
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"เกิดข้อผิดพลาดในการโหลด Input List: {ex.Message}", "ข้อผิดพลาด", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Marshal.ReleaseComObject(iterator);
             }
         }
 
         private void SetInputButton_Click(object sender, EventArgs e)
         {
-            try
+            if (inputComboBox.SelectedIndex >= 0 && inputComboBox.SelectedItem != null)
             {
-                if (meBlock != null && inputComboBox.SelectedItem != null)
+                string? selectedItem = inputComboBox.SelectedItem.ToString();
+                if (selectedItem != null)
                 {
-                    string selectedInput = inputComboBox.SelectedItem.ToString();
-                    long inputId = long.Parse(selectedInput.Split(':')[0]);
-
-                    // ตั้งค่า Input เป็น Program
-                    meBlock.SetProgramInput(inputId);
-                    statusLabel.Text = $"สถานะ: เปลี่ยน Input เป็น {selectedInput}";
+                    long inputId = long.Parse(selectedItem.Split('-')[0].Trim());
+                    
+                    if (meBlock != null)
+                    {
+                        meBlock.SetPreviewInput(inputId);
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"เกิดข้อผิดพลาดในการเปลี่ยน Input: {ex.Message}", "ข้อผิดพลาด", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -272,62 +196,78 @@ namespace WinformApp
         {
             if (switcher != null)
             {
-                Marshal.ReleaseComObject(switcher);
+                if (meBlock != null && meCallback != null)
+                {
+                    meBlock.RemoveCallback(meCallback);
+                    meCallback = null;
+                }
+                
                 switcher = null;
                 meBlock = null;
-
+                
                 connectButton.Enabled = true;
                 disconnectButton.Enabled = false;
-                cutButton.Enabled = false;
-                autoButton.Enabled = false;
                 inputComboBox.Enabled = false;
                 setInputButton.Enabled = false;
+                cutButton.Enabled = false;
+                autoButton.Enabled = false;
+                
                 statusLabel.Text = "สถานะ: ไม่ได้เชื่อมต่อ";
             }
         }
 
         private void CutButton_Click(object sender, EventArgs e)
         {
-            try
+            if (meBlock != null)
             {
-                if (meBlock != null)
-                {
-                    meBlock.PerformCut();
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"เกิดข้อผิดพลาดในการ Cut: {ex.Message}", "ข้อผิดพลาด", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                meBlock.PerformCut();
             }
         }
 
         private void AutoButton_Click(object sender, EventArgs e)
         {
-            try
+            if (meBlock != null)
             {
-                if (meBlock != null)
-                {
-                    meBlock.PerformAutoTransition();
-                }
+                meBlock.PerformAutoTransition();
             }
-            catch (Exception ex)
+        }
+
+        private void UpdateProgramInput()
+        {
+            if (meBlock != null)
             {
-                MessageBox.Show($"เกิดข้อผิดพลาดในการ Auto: {ex.Message}", "ข้อผิดพลาด", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                long programInput;
+                meBlock.GetProgramInput(out programInput);
+                programLabel.Text = $"Program: {inputMap.GetValueOrDefault(programInput, "Unknown")}";
+            }
+        }
+
+        private void UpdatePreviewInput()
+        {
+            if (meBlock != null)
+            {
+                long previewInput;
+                meBlock.GetPreviewInput(out previewInput);
+                previewLabel.Text = $"Preview: {inputMap.GetValueOrDefault(previewInput, "Unknown")}";
             }
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
-            base.OnFormClosing(e);
             if (switcher != null)
             {
-                Marshal.ReleaseComObject(switcher);
+                if (meBlock != null && meCallback != null)
+                {
+                    meBlock.RemoveCallback(meCallback);
+                }
+                switcher = null;
             }
+            base.OnFormClosing(e);
         }
 
         private class ConfigData
         {
-            public string IpAddress { get; set; }
+            public string IpAddress { get; set; } = string.Empty;
         }
     }
 } 

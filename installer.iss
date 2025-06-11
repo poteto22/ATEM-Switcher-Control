@@ -17,7 +17,7 @@ SolidCompression=yes
 WizardStyle=modern
 
 [Languages]
-Name: "thai"; MessagesFile: "compiler:Languages\Thai.isl"
+Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
